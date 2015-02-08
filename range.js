@@ -28,6 +28,23 @@ instance.prototype.eachWhile = function(f) {
     return true
 }
 
+instance.prototype.eachLater = function(f) {
+    var self = this
+
+    var ret = new instance(
+        self.value,
+        self.done,
+        function() {
+            f(ret.value)
+            self.next()
+            ret.value = self.value
+            ret.done = self.done
+        }
+    )
+
+    return ret
+}
+
 instance.prototype.filter = function(f) {
     while (!this.done && !f(this.value))
         this.next()
@@ -199,6 +216,94 @@ instance.prototype.isPalindrome = function() {
     return true
 }
 
+instance.prototype.head = function(n) {
+    var self = this
+
+    var ret = new instance(
+        self.value,
+        n === 0,
+        function() {
+            self.next()
+
+            if (self.done) {
+                ret.done = true
+                return
+            }
+
+            n--
+            ret.value = self.value
+            ret.done = n <= 0
+        }
+    )
+
+    return ret
+}
+
+instance.prototype.tail = function(n) {
+    return this.window(n).last()
+}
+
+instance.prototype.first = function() { return this.value }
+
+instance.prototype.last = function() {
+    var last
+
+    while (!this.done) {
+        last = this.value
+        this.next()
+    }
+
+    return last
+}
+
+instance.prototype.length = function() {
+    var len = 0
+    while (!this.done) {
+        len++
+        this.next()
+    }
+    return len
+}
+
+instance.prototype.flatten = function() {
+    var self = this
+    var i = 0
+
+    while (!self.done && self.value.length === 0)
+        self.next()
+
+    if (self.done)
+        return this
+
+    var ret = new instance(
+        self.value[i],
+        false,
+        function() {
+            i++
+            if (i >= self.value.length) {
+                do {
+                    self.next()
+                } while (!self.done && self.value.length === 0)
+                
+                if (self.done) {
+                    ret.done = true
+                    return
+                }
+
+                i = 0
+            }
+
+            ret.value = self.value[i]
+        }
+    )
+
+    return ret
+}
+
+instance.prototype.multimap = function(f) {
+    return this.map(f).flatten()
+}
+
 range.empty = function() {
     return new instance(
         0,
@@ -221,7 +326,7 @@ range.interval = function(a, b) {
 }
 
 range.primes = function() {
-    // Generate primes by testing divisibility by each previous prime.
+    // Generate primes by testing divisibility by previous primes.
     // TODO: Sieve or Eratoshenes should be significantly better.
 
     var primesSoFar = []
