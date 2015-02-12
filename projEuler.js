@@ -7,6 +7,7 @@ var args = range.util.args
 
 var solutions = [
     function p1() {
+        // Sum the numbers from 1 to 1000 which are divisible by 3 or 5.
         return range
             .interval(1, 1000)
             .filter(function(x) {
@@ -15,6 +16,7 @@ var solutions = [
             .sum()
     },
     function p2() {
+        // Sum the even fibonacci numbers under 4000000.
         return range
             .fromGenerator(function(){
                 var state = [1, 0]
@@ -32,6 +34,7 @@ var solutions = [
             .sum()
     },
     function p3() {
+        // Find the largest prime factor of 600851475143
         var n = 600851475143
 
         var p = range
@@ -50,6 +53,7 @@ var solutions = [
         return p
     },
     function p4() {
+        // Find the largest product of two 3 digit numbers which is a palindrome.
         return range
             .cross(
                 range.interval(100, 1000),
@@ -59,6 +63,7 @@ var solutions = [
             .max()
     },
     function p5() {
+        // Find the smallest number divisible by 1 to 20.
         function gcd(a, b) {
             while (b !== 0) {
                 var tmp = b
@@ -76,10 +81,12 @@ var solutions = [
             })
     },
     function p6() {
+        // Find the difference between the square of the sum of 1 to 100 and the sum of squares from 1 to 100.
         function sqr(x) { return x * x }
         return sqr(range.interval(1, 101).sum()) - range.interval(1, 101).map(sqr).sum()
     },
     function p7() {
+        // Find the 10,001st prime.
         return range.primes().head(10001).last()
     },
     function p8() {
@@ -94,6 +101,7 @@ var solutions = [
             .max()
     },
     function p9() {
+        // Find the only pythagorean triad ([a, b, c] such that a * a + b * b = c * c).
         return range
             .cross(
                 range.interval(1, 1000),
@@ -450,7 +458,7 @@ var solutions = [
             .filter(args(function(year, month) {
                 return (new Date(year, month, 1)).getDay() === 0
             }))
-            .count()
+            .length()
     },
     function p20() {
         return range

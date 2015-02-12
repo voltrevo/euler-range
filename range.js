@@ -5,12 +5,16 @@ var range = {}
 ;(function(){
 
 function instance(value, done, next) {
-    this.value = value
-    this.done = done
-    this.next = next
+    // An instance of a range.
+
+    this.value = value // current value
+    this.done = done   // boolean indicating whether we are at the end of the range. If true, value and next are invalid and should not be accessed.
+    this.next = next   // function to progress to the next element of the range
 }
 
 instance.prototype.do = function(f) {
+    // Simply do something, ie call f, as values pass through. f is called as values come in (just after next).
+
     if (this.done)
         return
 
@@ -31,6 +35,8 @@ instance.prototype.do = function(f) {
 }
 
 instance.prototype.doLater = function(f) {
+    // Simply do something, ie call f, as values pass through. f is called as values go out (just before next).
+
     var self = this
     var oldNext = self.next
 
@@ -43,6 +49,7 @@ instance.prototype.doLater = function(f) {
 }
 
 instance.prototype.each = function(f) {
+    // Call f for each element of the range. This is different from do because it causes iteration and does not allow chaining.
     while (!this.done) {
         f(this.value)
         this.next()
@@ -50,6 +57,7 @@ instance.prototype.each = function(f) {
 }
 
 instance.prototype.eachWhile = function(f) {
+    // Like each, but f returns true to keep going and false to stop.
     while (!this.done) {
         if (!f(this.value)) {
             return false
@@ -61,6 +69,8 @@ instance.prototype.eachWhile = function(f) {
 }
 
 instance.prototype.filter = function(f) {
+    // Remove all values for which f(x) is false.
+
     while (!this.done && !f(this.value))
         this.next()
 
@@ -90,6 +100,8 @@ instance.prototype.filter = function(f) {
 }
 
 instance.prototype.map = function(f) {
+    // Replace value with f(value).
+
     if (this.done)
         return this
 
@@ -112,6 +124,8 @@ instance.prototype.map = function(f) {
 }
 
 instance.prototype.window = function(size) {
+    // Convert range to moving window so that multiple elements can be seen at once. For example, [1, 2, 3, 4] => [[1, 2], [2, 3], [3, 4]]
+
     var self = this
 
     var w = []
@@ -146,6 +160,8 @@ instance.prototype.window = function(size) {
 }
 
 instance.prototype.while = function(cond) {
+    // Set done to true when cond(value) is false.
+
     if (this.done)
         return this
 
@@ -165,24 +181,33 @@ instance.prototype.while = function(cond) {
 }
 
 instance.prototype.fold = function(x, f) {
+    // Collapse the range into a single value by providing a starting value and a function which takes two range elements and returns one.
     this.each(function(element) {
         x = f(x, element)
     })
     return x
 }
 
+// Convenience wrapper around fold to calculate a sum.
 instance.prototype.sum = function() { return this.fold(0, function(x, y) { return x + y }) }
+
+// Convenience wrapper around fold to calculate a product.
 instance.prototype.product = function() { return this.fold(1, function(x, y) { return x * y }) }
 
 instance.prototype.count = function() {
+    // Count the elements in the range.
     var c = 0
     this.each(function() { c++ })
     return c
 }
 
+// Convenience wrapper around fold to calculate the minimum.
 instance.prototype.min = function() { return this.fold(Infinity, Math.min) }
+
+// Convenience wrapper around fold to calculate the maximum.
 instance.prototype.max = function() { return this.fold(-Infinity, Math.max) }
 
+// Concatenate rhs onto the end of the range.
 instance.prototype.concat = function(rhs) {
     if (this.done)
         return rhs
@@ -209,12 +234,14 @@ instance.prototype.concat = function(rhs) {
     return ret
 }
 
+// Convert a range to an array.
 instance.prototype.toArray = function() {
     var arr = []
     this.each(function(x) { arr.push(x) })
     return arr
 }
 
+// Is range palindromic.
 instance.prototype.isPalindrome = function() {
     var arr = this.toArray()
 
@@ -232,6 +259,7 @@ instance.prototype.isPalindrome = function() {
     return true
 }
 
+// Return a range with only the first n elements of the current range.
 instance.prototype.head = function(n) {
     var self = this
 
@@ -255,13 +283,17 @@ instance.prototype.head = function(n) {
     return ret
 }
 
+// Return a range with only the last n elements of the current range.
 instance.prototype.tail = function(n) {
     return this.window(n).last()
 }
 
+// Return the first element of the range.
 instance.prototype.first = function() { return this.value }
 
+
 instance.prototype.last = function() {
+    // Return the last element of the range.
     var last
 
     while (!this.done) {
@@ -273,15 +305,14 @@ instance.prototype.last = function() {
 }
 
 instance.prototype.length = function() {
-    var len = 0
-    while (!this.done) {
-        len++
-        this.next()
-    }
-    return len
+    // Count the elements in the range.
+    var c = 0
+    this.each(function() { c++ })
+    return c
 }
 
 instance.prototype.flatten = function() {
+    // Concatenate an array of arrays. E.g. [[5], [], [6, 7, 8]] => [5, 6, 7, 8]
     var self = this
     var i = 0
 
@@ -317,14 +348,17 @@ instance.prototype.flatten = function() {
 }
 
 instance.prototype.multimap = function(f) {
+    // Like map, but each element can be mapped to multiple elements by returning an array.
     return this.map(f).flatten()
 }
 
 instance.prototype.sponge = function(f) {
+    // Execute all the previous operations without changing the range by storing it in an array.
     return range.fromArray(f(this.toArray()))
 }
 
 instance.prototype.spongeLog = function(tag) {
+    // Log the current range. For debugging.
     return this.sponge(function(arr) {
         console.log(tag, arr)
         return arr
@@ -332,6 +366,7 @@ instance.prototype.spongeLog = function(tag) {
 }
 
 instance.prototype.toProperty = function(key) {
+    // Take a range of values and map it to a range of objects with a key to those values. E.g. [1, 2, 3] => [{x: 1}, {x: 2}, {x: 3}]
     return this.map(function(x) {
         var ret = {}
         ret[key] = x
@@ -340,12 +375,15 @@ instance.prototype.toProperty = function(key) {
 }
 
 instance.prototype.mapProperty = function(key, f) {
+    // Like map, but apply to a property.
     return this.do(function(x) {
         x[key] = f(x[key])
     })
 }
 
+
 instance.prototype.combine = function(key, rng) {
+    // Augment the objects with a key mapping to another range.
     if (this.done)
         return this
 
@@ -376,6 +414,7 @@ instance.prototype.combine = function(key, rng) {
 }
 
 instance.prototype.addIndex = function() {
+    // Add .index to each object.
     var index = 0
 
     return this.do(function(x) {
@@ -384,12 +423,14 @@ instance.prototype.addIndex = function() {
 }
 
 instance.prototype.log = function() {
+    // Do console.log on all the elements.
     this.each(function(x) {
         console.log(x)
     })
 }
 
 range.empty = function() {
+    // An empty range.
     return new instance(
         0,
         true,
@@ -398,6 +439,7 @@ range.empty = function() {
 }
 
 range.interval = function(a, b) {
+    // An interval from a to b. It's a half-open range, so a is included but b is not.
     var ret = new instance(
         a,
         a >= b,
@@ -411,6 +453,7 @@ range.interval = function(a, b) {
 }
 
 range.numbers = function(i) {
+    // An infinite range starting from i.
     var ret = new instance(
         i,
         false,
@@ -468,6 +511,7 @@ range.primes = function() {
 }
 
 range.fromArray = function(arr) {
+    // Create a range from an array.
     if (arr.length === 0)
         return range.empty()
 
@@ -490,6 +534,7 @@ range.fromArray = function(arr) {
 }
 
 range.single = function(x) {
+    // A range with a single element.
     var ret = new instance(
         x,
         false,
@@ -500,6 +545,7 @@ range.single = function(x) {
 }
 
 range.fromString = function(str) {
+    // Create a range from a string. E.g. 'abc' => ['a', 'b', 'c']
     if (str.length === 0)
         return range.empty()
 
@@ -522,6 +568,7 @@ range.fromString = function(str) {
 }
 
 range.digits = function(n) {
+    // Creates a range from the digits of a number.
     var ret = new instance(
         n % 10,
         n === 0,
@@ -540,6 +587,7 @@ range.digits = function(n) {
 }
 
 range.fromGenerator = function(f) {
+    // Creates an infinite range by repeatedly calling f().
     var ret = new instance(
         f(),
         false,
@@ -550,6 +598,9 @@ range.fromGenerator = function(f) {
 }
 
 range.cross = function(r1, r2) {
+    // The cross product of r1 and r2. So e.g. [1, 2], [3, 4] => [[1, 3], [1, 4], [2, 3], [2, 4]]
+    // TODO: support infinite ranges using diagonal traversal.
+
     if (r1.done || r2.done)
         return range.empty()
 
@@ -583,6 +634,7 @@ range.cross = function(r1, r2) {
 }
 
 range.pair = function(r1, r2) {
+    // Convert a pair of ranges into a range of pairs. E.g. [1, 2], [3, 4] => [[1, 3], [2, 4]]
     if (r1.done || r2.done)
         return range.empty()
 
@@ -606,39 +658,10 @@ range.pair = function(r1, r2) {
 range.util = {}
 
 range.util.args = function(f) {
+    // Wraps f so that calling the result with an array calls f with that argument array.
     return function(arr) {
         return f.apply(undefined, arr)
     }
-}
-
-range.test = function() {
-    ;(function basicInterval() {
-
-        /*range.interval(0, 10).each(function(x) {
-            console.log(x)
-        })*/
-
-        range
-            .fromGenerator(function() {
-                var i = 0
-                return function() { return i++ }
-            }())
-            .while(function(x) { return x <= 13 })
-            .each(function(x) {
-                console.log(x)
-            })
-
-    }())
-
-    ;(function projEuler1() {
-
-        console.log(
-            range
-                .interval(1, 1000)
-                .filter(function(x) { return x % 3 === 0 || x % 5 === 0 })
-                .sum())
-
-    }())
 }
 
 if (module)
