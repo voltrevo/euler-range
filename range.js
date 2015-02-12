@@ -10,6 +10,38 @@ function instance(value, done, next) {
     this.next = next
 }
 
+instance.prototype.do = function(f) {
+    if (this.done)
+        return
+
+    var self = this
+    
+    f(self.value)
+
+    var oldNext = self.next
+
+    self.next = function() {
+        oldNext()
+
+        if (!self.done)
+            f(self.value)
+    }
+
+    return self
+}
+
+instance.prototype.doLater = function(f) {
+    var self = this
+    var oldNext = self.next
+
+    self.next = function() {
+        f(self.value)
+        oldNext()
+    }
+
+    return self
+}
+
 instance.prototype.each = function(f) {
     while (!this.done) {
         f(this.value)
@@ -26,23 +58,6 @@ instance.prototype.eachWhile = function(f) {
     }
 
     return true
-}
-
-instance.prototype.eachLater = function(f) {
-    var self = this
-
-    var ret = new instance(
-        self.value,
-        self.done,
-        function() {
-            f(ret.value)
-            self.next()
-            ret.value = self.value
-            ret.done = self.done
-        }
-    )
-
-    return ret
 }
 
 instance.prototype.filter = function(f) {
@@ -105,21 +120,14 @@ instance.prototype.window = function(size) {
         self.next()
     }
 
-    if (self.done) {
+    if (w.length < size) {
         return self
     }
 
     var ret = new instance(
-        range.fromArray(w),
+        w,
         false,
         function() {
-            if (self.done) {
-                ret.done = true
-                return
-            } else {
-                self.next()
-            }
-
             if (self.done) {
                 ret.done = true
                 return
@@ -127,7 +135,10 @@ instance.prototype.window = function(size) {
 
             w.shift()
             w.push(self.value)
-            ret.value = range.fromArray(w)
+
+            ret.value = w
+
+            self.next()
         }
     )
 
@@ -173,24 +184,29 @@ instance.prototype.min = function() { return this.fold(Infinity, Math.min) }
 instance.prototype.max = function() { return this.fold(-Infinity, Math.max) }
 
 instance.prototype.concat = function(rhs) {
+    if (this.done)
+        return rhs
+
+    if (rhs.done)
+        return this
 
     var curr = this
 
-    return new instance(
-
-    )
-
-    return new instance(
+    var ret = new instance(
+        curr.value,
+        false,
         function() {
-            if (!curr.hasNext())
+            curr.next()
+
+            if (curr.done)
                 curr = rhs
 
-            return curr.next()
-        },
-        function() {
-            return curr.hasNext() || rhs.hasNext()
+            ret.value = curr.value
+            ret.done = curr.done
         }
     )
+
+    return ret
 }
 
 instance.prototype.toArray = function() {
@@ -304,10 +320,79 @@ instance.prototype.multimap = function(f) {
     return this.map(f).flatten()
 }
 
+instance.prototype.sponge = function(f) {
+    return range.fromArray(f(this.toArray()))
+}
+
+instance.prototype.spongeLog = function(tag) {
+    return this.sponge(function(arr) {
+        console.log(tag, arr)
+        return arr
+    })
+}
+
+instance.prototype.toProperty = function(key) {
+    return this.map(function(x) {
+        var ret = {}
+        ret[key] = x
+        return ret
+    })
+}
+
+instance.prototype.mapProperty = function(key, f) {
+    return this.do(function(x) {
+        x[key] = f(x[key])
+    })
+}
+
+instance.prototype.combine = function(key, rng) {
+    if (this.done)
+        return this
+
+    if (rng.done)
+        return rng
+
+    var self = this
+    self.value[key] = rng.value
+
+    var ret = new instance(
+        self.value,
+        false,
+        function() {
+            self.next()
+            rng.next()
+
+            ret.value = self.value
+
+            ret.done = self.done || rng.done
+
+            if (!ret.done) {
+                ret.value[key] = rng.value
+            }
+        }
+    )
+
+    return ret
+}
+
+instance.prototype.addIndex = function() {
+    var index = 0
+
+    return this.do(function(x) {
+        x.index = index++
+    })
+}
+
+instance.prototype.log = function() {
+    this.each(function(x) {
+        console.log(x)
+    })
+}
+
 range.empty = function() {
     return new instance(
         0,
-        false,
+        true,
         function(){}
     )
 }
@@ -319,6 +404,19 @@ range.interval = function(a, b) {
         function() {
             ret.value++
             ret.done = ret.value >= b
+        }
+    )
+
+    return ret
+}
+
+range.numbers = function(i) {
+    var ret = new instance(
+        i,
+        false,
+        function() {
+            i++
+            ret.value = i
         }
     )
 
@@ -391,6 +489,16 @@ range.fromArray = function(arr) {
     return ret
 }
 
+range.single = function(x) {
+    var ret = new instance(
+        x,
+        false,
+        function() { ret.done = true }
+    )
+
+    return ret
+}
+
 range.fromString = function(str) {
     if (str.length === 0)
         return range.empty()
@@ -442,9 +550,8 @@ range.fromGenerator = function(f) {
 }
 
 range.cross = function(r1, r2) {
-    if (r1.done || r2.done) {
+    if (r1.done || r2.done)
         return range.empty()
-    }
 
     var arr1 = r1.toArray()
     var arr2 = r2.toArray()
@@ -469,6 +576,27 @@ range.cross = function(r1, r2) {
             }
 
             ret.value = [arr1[i], arr2[j]]
+        }
+    )
+
+    return ret
+}
+
+range.pair = function(r1, r2) {
+    if (r1.done || r2.done)
+        return range.empty()
+
+    var ret = new instance(
+        [r1.value, r2.value],
+        false,
+        function() {
+            r1.next()
+            r2.next()
+
+            ret.done = (r1.done || r2.done)
+
+            if (!ret.done)
+                ret.value = [r1.value, r2.value]
         }
     )
 
@@ -507,5 +635,4 @@ range.test = function() {
 
 if (module)
     module.exports = range
-
 }())
