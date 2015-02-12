@@ -603,6 +603,14 @@ range.pair = function(r1, r2) {
     return ret
 }
 
+range.util = {}
+
+range.util.args = function(f) {
+    return function(arr) {
+        return f.apply(undefined, arr)
+    }
+}
+
 range.test = function() {
     ;(function basicInterval() {
 

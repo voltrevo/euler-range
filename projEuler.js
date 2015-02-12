@@ -3,6 +3,7 @@
 var bigint = require("bigint")
 
 var range = require("./range.js")
+var args = range.util.args
 
 var solutions = [
     function p1() {
@@ -53,7 +54,7 @@ var solutions = [
             .cross(
                 range.interval(100, 1000),
                 range.interval(100, 1000))
-            .map(function(x) { return x[0] * x[1] })
+            .map(args(function(x, y) { return x * y }))
             .filter(function(x) { return range.digits(x).isPalindrome() })
             .max()
     },
@@ -97,14 +98,14 @@ var solutions = [
             .cross(
                 range.interval(1, 1000),
                 range.interval(1, 1000))
-            .map(function(x) {
-                x.push(1000 - x[0] - x[1])
-                return x
-            })
-            .filter(function(x) {
-                return x[0] * x[0] + x[1] * x[1] === x[2] * x[2]
-            })
-            .map(function(x) { return x[0] * x[1] * x[2] })
+            .map(args(function(a, b) {
+                var c = 1000 - a - b
+                return [a, b, c]
+            }))
+            .filter(args(function(a, b, c) {
+                return a * a + b * b === c * c
+            }))
+            .map(args(function(a, b, c) { return a * b * c }))
             .first()
     },
     function p10() {
@@ -141,37 +142,37 @@ var solutions = [
             .cross(
                 range.interval(0, 20),
                 range.interval(0, 20))
-            .multimap(function(i) {
+            .multimap(args(function(i, j) {
                 var ret = []
 
-                if (i[0] < 16) {
+                if (i < 16) {
                     ret.push(range
                         .interval(0, 4)
-                        .map(function(x) { return grid[i[0] + x][i[1]] })
+                        .map(function(x) { return grid[i + x][j] })
                     )
                 }
 
-                if (i[1] < 16) {
+                if (j < 16) {
                     ret.push(range
                         .interval(0, 4)
-                        .map(function(x) { return grid[i[0]][i[1] + x] })
+                        .map(function(x) { return grid[i][j + x] })
                     )
                 }
 
-                if (i[0] < 16 && i[1] < 16) {
+                if (i < 16 && j < 16) {
                     ret.push(range
                         .interval(0, 4)
-                        .map(function(x) { return grid[i[0] + x][i[1] + x] })
+                        .map(function(x) { return grid[i + x][j + x] })
                     )
 
                     ret.push(range
                         .interval(0, 4)
-                        .map(function(x) { return grid[i[0] + x][i[1] + 3 - x] })
+                        .map(function(x) { return grid[i + x][j + 3 - x] })
                     )
                 }
 
                 return ret
-            })
+            }))
             .map(function(r) { return r.product() })
             .max()
     },
@@ -407,20 +408,20 @@ var solutions = [
     },
     function p18() {
         var pyramid = [
-            [75],
-            [95, 64],
-            [17, 47, 82],
-            [18, 35, 87, 10],
-            [20,  4, 82, 47, 65],
-            [19,  1, 23, 75,  3, 34],
-            [88,  2, 77, 73,  7, 63, 67],
-            [99, 65,  4, 28,  6, 16, 70, 92],
-            [41, 41, 26, 56, 83, 40, 80, 70, 33],
-            [41, 48, 72, 33, 47, 32, 37, 16, 94, 29],
-            [53, 71, 44, 65, 25, 43, 91, 52, 97, 51, 14],
-            [70, 11, 33, 28, 77, 73, 17, 78, 39, 68, 17, 57],
-            [91, 71, 52, 38, 17, 14, 91, 43, 58, 50, 27, 29, 48],
-            [63, 66,  4, 68, 89, 53, 67, 30, 73, 16, 69, 87, 40, 31],
+                                        [75],
+                                      [95, 64],
+                                    [17, 47, 82],
+                                  [18, 35, 87, 10],
+                                [20,  4, 82, 47, 65],
+                              [19,  1, 23, 75,  3, 34],
+                            [88,  2, 77, 73,  7, 63, 67],
+                          [99, 65,  4, 28,  6, 16, 70, 92],
+                        [41, 41, 26, 56, 83, 40, 80, 70, 33],
+                      [41, 48, 72, 33, 47, 32, 37, 16, 94, 29],
+                    [53, 71, 44, 65, 25, 43, 91, 52, 97, 51, 14],
+                  [70, 11, 33, 28, 77, 73, 17, 78, 39, 68, 17, 57],
+                [91, 71, 52, 38, 17, 14, 91, 43, 58, 50, 27, 29, 48],
+              [63, 66,  4, 68, 89, 53, 67, 30, 73, 16, 69, 87, 40, 31],
             [ 4, 62, 98, 27, 23,  9, 70, 98, 73, 93, 38, 53, 60,  4, 23]
         ]
 
@@ -435,11 +436,32 @@ var solutions = [
                             .concat(r1)
                             .concat(range.single(0))
                             .window(2)
-                            .map(function(x) { return Math.max(x[0], x[1]) }),
+                            .map(args(Math.max)),
                         r2)
-                    .map(function(x) { return x[0] + x[1] })
+                    .map(args(function(x, y) { return x + y }))
             })
             .max()
+    },
+    function p19() {
+        return range
+            .cross(
+                range.interval(1901, 2001),
+                range.interval(1, 13))
+            .filter(args(function(year, month) {
+                return (new Date(year, month, 1)).getDay() === 0
+            }))
+            .count()
+    },
+    function p20() {
+        return range
+            .fromString(
+                range
+                    .interval(1, 101)
+                    .fold(bigint(1), function(x, y) {
+                        return x.mul(y)
+                    }).toString())
+            .map(parseInt)
+            .sum()
     }
 ]
 
