@@ -1,0 +1,25 @@
+{
+  "name": "euler-range",
+  "version": "0.1.0",
+  "description": "A javascript library modeling the range concept and transforms on it. Named in honour of Leonhard Euler and developed alongside Project Euler solutions.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voltrevo/range.git"
+  },
+  "keywords": [
+    "range",
+    "euler",
+    "math",
+    "algorithm"
+  ],
+  "author": "Andrew Morris",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/voltrevo/range/issues"
+  },
+  "homepage": "https://github.com/voltrevo/range"
+}
