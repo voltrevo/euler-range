@@ -1,6 +1,6 @@
 "use strict";
 
-var range = require("../../range.js")
+var range = require("../../index")
 
 module.exports = function p10() {
     // Find the sum of all primes below 2,000,000.

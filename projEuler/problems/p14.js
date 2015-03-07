@@ -1,6 +1,6 @@
 "use strict";
 
-var range = require("../../range.js")
+var range = require("../../index")
 
 module.exports = function p14() {
     // Find the longest collatz sequence starting less than 1,000,000.

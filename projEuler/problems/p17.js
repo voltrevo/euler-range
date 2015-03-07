@@ -1,6 +1,6 @@
 "use strict";
 
-var range = require("../../range.js")
+var range = require("../../index")
 
 module.exports = function p17() {
     // Find the number of letters in "one, two, three, ... one thousand" without commas or spaces.

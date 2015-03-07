@@ -1,6 +1,6 @@
 "use strict";
 
-var range = require("../../range.js")
+var range = require("../../index")
 
 module.exports = function p3() {
     // Find the largest prime factor of 600851475143

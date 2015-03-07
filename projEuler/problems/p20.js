@@ -2,7 +2,7 @@
 
 var bigint = require("bigint")
 
-var range = require("../../range.js")
+var range = require("../../index")
 
 module.exports = function p20() {
     // Find the sum of the digits in 100!

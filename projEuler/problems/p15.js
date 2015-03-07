@@ -1,6 +1,6 @@
 "use strict";
 
-var range = require("../../range.js")
+var range = require("../../index")
 
 module.exports = function p15() {
     // Find the number of paths from the top-left to the bottom-right through a 20x20 grid only moving right or down.

@@ -1,6 +1,6 @@
 "use strict";
 
-var range = require("../../range.js")
+var range = require("../../index")
 
 module.exports = function p1() {
     // Sum the numbers from 1 to 1000 which are divisible by 3 or 5.

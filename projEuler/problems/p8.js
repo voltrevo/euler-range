@@ -1,6 +1,6 @@
 "use strict";
 
-var range = require("../../range.js")
+var range = require("../../index")
 
 module.exports = function p8() {
     // Find the 13 consecutive digits below with the largest product.

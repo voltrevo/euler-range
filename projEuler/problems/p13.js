@@ -2,7 +2,7 @@
 
 var bigint = require("bigint")
 
-var range = require("../../range.js")
+var range = require("../../index")
 
 module.exports = function p13() {
     // Find the first 10 digits of the sum of the following numbers.

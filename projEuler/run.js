@@ -1,6 +1,6 @@
 "use strict";
 
-var range = require("../range.js")
+var range = require("../index")
 
 range
     .interval(1, 21)

@@ -1,6 +1,6 @@
 "use strict";
 
-var range = require("../../range.js")
+var range = require("../../index")
 
 module.exports = function p6() {
     // Find the difference between the square of the sum of 1 to 100 and the sum of squares from 1 to 100.

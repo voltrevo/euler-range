@@ -1,6 +1,6 @@
 "use strict";
 
-var range = require("../../range.js")
+var range = require("../../index")
 
 module.exports = function p2() {
     // Sum the even fibonacci numbers under 4000000.

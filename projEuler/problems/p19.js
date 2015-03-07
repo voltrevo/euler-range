@@ -1,6 +1,6 @@
 "use strict";
 
-var range = require("../../range.js")
+var range = require("../../index")
 var args = range.util.args
 
 module.exports = function p19() {
